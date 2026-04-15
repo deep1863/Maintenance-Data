@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Machine Maintenance Management</title>
+<style>
+:root {
+  --primary: #1E3A5F;
+  --primary-light: #2E5491;
+  --accent: #E8A020;
+  --danger: #C0392B;
+  --success: #27AE60;
+  --warning: #F39C12;
+  --bg: #F0F4F8;
+  --card: #FFFFFF;
+  --text: #1a1a2e;
+  --muted: #6B7280;
+  --border: #D1D5DB;
+  --hover: #EBF1FA;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --radius: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); }
+
+/* Layout */
+.app { display: flex; height: 100vh; overflow: hidden; }
+.sidebar { width: 260px; background: var(--primary); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* Sidebar */
+.sidebar-logo { padding: 22px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.sidebar-logo h2 { color: #fff; font-size: 16px; font-weight: 700; line-height: 1.3; }
+.sidebar-logo span { color: var(--accent); font-size: 12px; display: block; margin-top: 3px; }
+
+.nav-section { padding: 16px 12px 8px; }
+.nav-label { color: rgba(255,255,255,0.45); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 0 8px 8px; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; color: rgba(255,255,255,0.75); font-size: 14px; transition: all 0.2s; margin-bottom: 2px; }
+.nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.12); color: #fff; }
+.nav-item .icon { width: 20px; text-align: center; font-size: 16px; }
+
+.machine-list { padding: 8px 12px; flex: 1; }
+.machine-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; cursor: pointer; color: rgba(255,255,255,0.7); font-size: 13px; transition: all 0.2s; margin-bottom: 1px; }
+.machine-item:hover, .machine-item.active { background: rgba(255,255,255,0.12); color: #fff; }
+.machine-item .badge { margin-left: auto; background: rgba(255,255,255,0.2); color: #fff; font-size: 10px; padding: 1px 6px; border-radius: 10px; }
+.machine-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+.add-machine-btn { margin: 8px 12px 16px; padding: 9px 12px; background: rgba(255,255,255,0.1); border: 1px dashed rgba(255,255,255,0.3); border-radius: 8px; color: rgba(255,255,255,0.7); font-size: 13px; cursor: pointer; text-align: center; transition: all 0.2s; }
+.add-machine-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+
+/* Topbar */
+.topbar { background: var(--card); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 12px; flex-shrink: 0; box-shadow: var(--shadow); }
+.topbar h1 { font-size: 18px; font-weight: 700; color: var(--primary); flex: 1; }
+.search-box { display: flex; align-items: center; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; gap: 8px; }
+.search-box input { border: none; background: transparent; outline: none; font-size: 13px; width: 220px; color: var(--text); }
+.btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-light); }
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-accent:hover { opacity: 0.9; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { opacity: 0.9; }
+.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+.btn-outline:hover { background: var(--hover); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { opacity: 0.85; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+/* Content */
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* Cards */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--card); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); border-left: 4px solid var(--primary); }
+.stat-card.accent { border-color: var(--accent); }
+.stat-card.success { border-color: var(--success); }
+.stat-card.warning { border-color: var(--warning); }
+.stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.stat-value { font-size: 32px; font-weight: 800; color: var(--primary); margin: 4px 0 2px; }
+.stat-sub { font-size: 12px; color: var(--muted); }
+
+/* Table */
+.table-card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.table-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.table-header h3 { font-size: 15px; font-weight: 700; color: var(--primary); flex: 1; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { background: var(--primary); color: #fff; padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 600; white-space: nowrap; }
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+tbody tr:hover { background: var(--hover); }
+tbody td { padding: 11px 14px; vertical-align: top; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+.badge-bd { background: #FEE2E2; color: #991B1B; }
+.badge-pm { background: #DCFCE7; color: #166534; }
+.badge-new { background: #DBEAFE; color: #1E40AF; }
+.badge-repeat { background: #FEF3C7; color: #92400E; }
+.badge-int { background: #F3F4F6; color: #374151; }
+.badge-ext { background: #EDE9FE; color: #5B21B6; }
+
+/* Form */
+.modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 1000; align-items: center; justify-content: center; }
+.modal-backdrop.show { display: flex; }
+.modal { background: var(--card); border-radius: 12px; width: 680px; max-width: 96vw; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.modal-head { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; }
+.modal-head h3 { font-size: 16px; font-weight: 700; color: var(--primary); flex: 1; }
+.modal-body { padding: 24px; overflow-y: auto; }
+.modal-foot { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1/-1; }
+label { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.4px; }
+input, select, textarea { border: 1.5px solid var(--border); border-radius: 7px; padding: 9px 12px; font-size: 13px; font-family: inherit; color: var(--text); background: var(--bg); transition: border 0.2s; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); background: #fff; }
+textarea { resize: vertical; min-height: 70px; }
+.required { color: var(--danger); }
+
+/* Alerts */
+.toast { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+.toast-item { background: var(--text); color: #fff; padding: 12px 18px; border-radius: 8px; font-size: 13px; font-weight: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.2); animation: slideIn 0.3s ease; min-width: 280px; display: flex; align-items: center; gap: 10px; }
+.toast-item.success { background: var(--success); }
+.toast-item.error { background: var(--danger); }
+.toast-item.warning { background: var(--warning); }
+@keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* Dashboard machine bars */
+.machine-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 13px; }
+.machine-bar-row .mname { width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.bar-track { flex: 1; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--primary); border-radius: 4px; transition: width 0.6s; }
+.bar-count { width: 28px; text-align: right; color: var(--muted); font-weight: 700; }
+
+.empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+.empty-state p { font-size: 15px; }
+
+.action-btns { display: flex; gap: 6px; }
+.page-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.page-header h2 { font-size: 20px; font-weight: 800; color: var(--primary); flex: 1; }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; background: var(--bg); padding: 4px; border-radius: 9px; width: fit-content; margin-bottom: 20px; }
+.tab { padding: 7px 16px; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--muted); transition: all 0.2s; }
+.tab.active { background: var(--card); color: var(--primary); box-shadow: var(--shadow); }
+
+.export-bar { background: var(--card); border-radius: var(--radius); padding: 14px 20px; box-shadow: var(--shadow); margin-bottom: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.export-bar span { font-size: 13px; color: var(--muted); flex: 1; }
+
+@media (max-width: 900px) {
+  .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .sidebar { width: 220px; }
+  .form-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h2>⚙️ Machine MMS</h2>
+      <span>Maintenance Management</span>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Navigation</div>
+      <div class="nav-item active" onclick="showView('dashboard')" id="nav-dashboard">
+        <span class="icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showView('all')" id="nav-all">
+        <span class="icon">📋</span> All Records
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Machines</div>
+    </div>
+    <div class="machine-list" id="machineList"></div>
+    <div class="add-machine-btn" onclick="openAddMachineModal()">+ Add Machine</div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <h1 id="topbarTitle">Dashboard</h1>
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" id="globalSearch" placeholder="Search records..." oninput="doSearch(this.value)">
+      </div>
+      <button class="btn btn-primary" onclick="openAddEntryModal()">+ New Entry</button>
+      <button class="btn btn-success" onclick="exportAll()">⬇ Export All</button>
+    </div>
+
+    <div class="content" id="mainContent">
+      <!-- Views injected by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- Entry Modal -->
+<div class="modal-backdrop" id="entryModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">New Maintenance Entry</h3>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('entryModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editId">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Machine <span class="required">*</span></label>
+          <select id="fMachine"></select>
+        </div>
+        <div class="form-group">
+          <label>Date <span class="required">*</span></label>
+          <input type="date" id="fDate">
+        </div>
+        <div class="form-group full">
+          <label>Breakdown / PM Details <span class="required">*</span></label>
+          <textarea id="fBreakdown" placeholder="Describe the breakdown or preventive maintenance..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Action Taken</label>
+          <textarea id="fAction" placeholder="Describe the corrective action taken..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Spares Used</label>
+          <input type="text" id="fSpares" placeholder="e.g. PLC CPU, 5'' booster">
+        </div>
+        <div class="form-group">
+          <label>Nature of Work</label>
+          <select id="fNatureWork">
+            <option value="BD">BD (Breakdown)</option>
+            <option value="PM">PM (Preventive Maintenance)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nature of B/D</label>
+          <select id="fNatureBD">
+            <option value="New">New</option>
+            <option value="Repeat">Repeat</option>
+            <option value="N/A">N/A</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Total Down Time</label>
+          <input type="text" id="fDownTime" placeholder="e.g. 6 HRS, 1.5 HRS">
+        </div>
+        <div class="form-group">
+          <label>B/D Cleared</label>
+          <select id="fCleared">
+            <option value="Int">Int (Internal)</option>
+            <option value="Ext">Ext (External)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('entryModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Machine Modal -->
+<div class="modal-backdrop" id="machineModal">
+  <div class="modal" style="width:400px">
+    <div class="modal-head">
+      <h3>Add Machine</h3>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('machineModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Machine Name <span class="required">*</span></label>
+        <input type="text" id="mName" placeholder="e.g. Hydraulic Press #2">
+      </div>
+      <div class="form-group" style="margin-top:14px">
+        <label>Department</label>
+        <input type="text" id="mDept" placeholder="e.g. Production, Machining">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('machineModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMachine()">Add Machine</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast" id="toastContainer"></div>
+
+<script>
+let machines = [], entries = [], currentView = 'dashboard', currentMachineId = null;
+
+async function api(url, opts={}) {
+  const r = await fetch(url, { headers: {'Content-Type':'application/json'}, ...opts });
+  const d = await r.json();
+  if (!r.ok) throw new Error(d.error || 'Request failed');
+  return d;
+}
+
+function toast(msg, type='success') {
+  const t = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast-item ${type}`;
+  el.innerHTML = `<span>${type==='success'?'✓':type==='error'?'✗':'!'}</span> ${msg}`;
+  t.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+async function loadMachines() {
+  machines = await api('/api/machines');
+  renderSidebar();
+  populateMachineSelect();
+}
+
+function renderSidebar() {
+  const list = document.getElementById('machineList');
+  const counts = {};
+  entries.forEach(e => { counts[e.machine_id] = (counts[e.machine_id]||0)+1; });
+  list.innerHTML = machines.map(m => `
+    <div class="machine-item ${currentMachineId===m.id?'active':''}" onclick="showMachine(${m.id},'${m.name.replace(/'/g,"\\'")}')">
+      <span class="machine-dot"></span>
+      <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.name}</span>
+      <span class="badge">${counts[m.id]||0}</span>
+    </div>`).join('');
+}
+
+function populateMachineSelect() {
+  const sel = document.getElementById('fMachine');
+  sel.innerHTML = machines.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+}
+
+async function loadEntries(machineId=null) {
+  const url = machineId ? `/api/entries?machine_id=${machineId}` : '/api/entries';
+  entries = await api(url);
+}
+
+function showView(view) {
+  currentView = view; currentMachineId = null;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.machine-item').forEach(el => el.classList.remove('active'));
+  document.getElementById(`nav-${view}`)?.classList.add('active');
+  if (view === 'dashboard') { document.getElementById('topbarTitle').textContent = 'Dashboard'; renderDashboard(); }
+  else { document.getElementById('topbarTitle').textContent = 'All Records'; loadEntries().then(() => { renderSidebar(); renderTable(entries, 'All Records'); }); }
+}
+
+async function showMachine(id, name) {
+  currentMachineId = id; currentView = 'machine';
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.machine-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`.machine-item[onclick*="${id}"]`)?.classList.add('active');
+  document.getElementById('topbarTitle').textContent = name;
+  await loadEntries(id);
+  renderTable(entries, name, id);
+}
+
+async function renderDashboard() {
+  const data = await api('/api/dashboard');
+  const maxCount = Math.max(...data.machine_stats.map(s=>s.entry_count), 1);
+  document.getElementById('mainContent').innerHTML = `
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Total Entries</div><div class="stat-value">${data.total_entries}</div><div class="stat-sub">All machines</div></div>
+      <div class="stat-card accent"><div class="stat-label">Total Machines</div><div class="stat-value">${data.total_machines}</div><div class="stat-sub">Registered</div></div>
+      <div class="stat-card success"><div class="stat-label">Breakdowns</div><div class="stat-value">${data.bd_count}</div><div class="stat-sub">BD entries</div></div>
+      <div class="stat-card warning"><div class="stat-label">Preventive Maint.</div><div class="stat-value">${data.pm_count}</div><div class="stat-sub">PM entries</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="table-card" style="padding:20px">
+        <h3 style="font-size:15px;font-weight:700;color:var(--primary);margin-bottom:16px">Machine Activity</h3>
+        ${data.machine_stats.map(s => `
+          <div class="machine-bar-row">
+            <span class="mname">${s.name}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.round((s.entry_count/maxCount)*100)}%"></div></div>
+            <span class="bar-count">${s.entry_count}</span>
+          </div>`).join('') || '<div class="empty-state"><p>No data yet</p></div>'}
+      </div>
+      <div class="table-card" style="padding:20px">
+        <h3 style="font-size:15px;font-weight:700;color:var(--primary);margin-bottom:16px">Recent Entries</h3>
+        ${data.recent.length ? data.recent.map(e => `
+          <div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:13px">
+            <div style="font-weight:600;color:var(--text)">${e.machine_name}</div>
+            <div style="color:var(--muted);margin-top:2px">${e.entry_date} — ${(e.breakdown_details||'').slice(0,60)}${e.breakdown_details?.length>60?'...':''}</div>
+          </div>`).join('') : '<div class="empty-state"><p>No entries yet</p></div>'}
+      </div>
+    </div>`;
+}
+
+function renderTable(data, title='All Records', machineId=null) {
+  const exportBtn = machineId ? `<button class="btn btn-accent btn-sm" onclick="exportMachine(${machineId})">⬇ Export</button>` : '';
+  document.getElementById('mainContent').innerHTML = `
+    <div class="export-bar">
+      <span>📋 Showing <b>${data.length}</b> record${data.length!==1?'s':''} for <b>${title}</b></span>
+      ${exportBtn}
+    </div>
+    <div class="table-card">
+      <div class="table-header">
+        <h3>${title}</h3>
+        <button class="btn btn-primary btn-sm" onclick="openAddEntryModal(${machineId||''})">+ Add Entry</button>
+      </div>
+      ${data.length === 0 ? `<div class="empty-state"><div class="icon">📂</div><p>No entries found. Click "+ Add Entry" to get started.</p></div>` : `
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>S.No</th><th>Date</th>${!machineId?'<th>Machine</th>':''}
+          <th>Breakdown / PM Details</th><th>Action Taken</th>
+          <th>Spares Used</th><th>Work</th><th>B/D Type</th>
+          <th>Down Time</th><th>Cleared</th><th>Actions</th>
+        </tr></thead>
+        <tbody>${data.map(e => `<tr>
+          <td>${e.sno}</td>
+          <td>${e.entry_date}</td>
+          ${!machineId?`<td><b>${e.machine_name}</b></td>`:''}
+          <td style="max-width:220px">${e.breakdown_details||''}</td>
+          <td style="max-width:220px">${e.action_taken||''}</td>
+          <td>${e.spares_used||''}</td>
+          <td><span class="badge badge-${(e.nature_of_work||'BD').toLowerCase()}">${e.nature_of_work||'BD'}</span></td>
+          <td><span class="badge badge-${(e.nature_of_bd||'New').toLowerCase()}">${e.nature_of_bd||'New'}</span></td>
+          <td>${e.total_down_time||''}</td>
+          <td><span class="badge badge-${(e.bd_cleared||'Int').toLowerCase()}">${e.bd_cleared||'Int'}</span></td>
+          <td><div class="action-btns">
+            <button class="btn btn-outline btn-sm" onclick="editEntry(${e.id})">✏</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteEntry(${e.id})">🗑</button>
+          </div></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`}
+    </div>`;
+}
+
+function openAddEntryModal(machineId=null) {
+  document.getElementById('editId').value = '';
+  document.getElementById('modalTitle').textContent = 'New Maintenance Entry';
+  document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('fBreakdown').value = '';
+  document.getElementById('fAction').value = '';
+  document.getElementById('fSpares').value = '';
+  document.getElementById('fNatureWork').value = 'BD';
+  document.getElementById('fNatureBD').value = 'New';
+  document.getElementById('fDownTime').value = '';
+  document.getElementById('fCleared').value = 'Int';
+  if (machineId) document.getElementById('fMachine').value = machineId;
+  openModal('entryModal');
+}
+
+function editEntry(id) {
+  const e = entries.find(x => x.id===id);
+  if (!e) return;
+  document.getElementById('editId').value = id;
+  document.getElementById('modalTitle').textContent = 'Edit Entry';
+  document.getElementById('fMachine').value = e.machine_id;
+  document.getElementById('fDate').value = e.entry_date;
+  document.getElementById('fBreakdown').value = e.breakdown_details||'';
+  document.getElementById('fAction').value = e.action_taken||'';
+  document.getElementById('fSpares').value = e.spares_used||'';
+  document.getElementById('fNatureWork').value = e.nature_of_work||'BD';
+  document.getElementById('fNatureBD').value = e.nature_of_bd||'New';
+  document.getElementById('fDownTime').value = e.total_down_time||'';
+  document.getElementById('fCleared').value = e.bd_cleared||'Int';
+  openModal('entryModal');
+}
+
+async function saveEntry() {
+  const id = document.getElementById('editId').value;
+  const payload = {
+    machine_id: +document.getElementById('fMachine').value,
+    entry_date: document.getElementById('fDate').value,
+    breakdown_details: document.getElementById('fBreakdown').value.trim(),
+    action_taken: document.getElementById('fAction').value.trim(),
+    spares_used: document.getElementById('fSpares').value.trim(),
+    nature_of_work: document.getElementById('fNatureWork').value,
+    nature_of_bd: document.getElementById('fNatureBD').value,
+    total_down_time: document.getElementById('fDownTime').value.trim(),
+    bd_cleared: document.getElementById('fCleared').value
+  };
+  if (!payload.entry_date) return toast('Date is required','error');
+  if (!payload.breakdown_details) return toast('Breakdown details required','error');
+  try {
+    if (id) {
+      await api(`/api/entries/${id}`, { method:'PUT', body: JSON.stringify(payload) });
+      toast('Entry updated successfully');
+    } else {
+      await api('/api/entries', { method:'POST', body: JSON.stringify(payload) });
+      toast('Entry added successfully');
+    }
+    closeModal('entryModal');
+    if (currentMachineId) showMachine(currentMachineId, document.getElementById('topbarTitle').textContent);
+    else if (currentView==='all') showView('all');
+    else renderDashboard();
+    await loadMachines();
+  } catch(err) { toast(err.message,'error'); }
+}
+
+async function deleteEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+  try {
+    await api(`/api/entries/${id}`, { method:'DELETE' });
+    toast('Entry deleted');
+    if (currentMachineId) showMachine(currentMachineId, document.getElementById('topbarTitle').textContent);
+    else showView('all');
+    await loadMachines();
+  } catch(err) { toast(err.message,'error'); }
+}
+
+function openAddMachineModal() {
+  document.getElementById('mName').value = '';
+  document.getElementById('mDept').value = '';
+  openModal('machineModal');
+}
+
+async function saveMachine() {
+  const name = document.getElementById('mName').value.trim();
+  const dept = document.getElementById('mDept').value.trim();
+  if (!name) return toast('Machine name required','error');
+  try {
+    await api('/api/machines', { method:'POST', body: JSON.stringify({name, department: dept}) });
+    toast('Machine added');
+    closeModal('machineModal');
+    await loadMachines();
+  } catch(err) { toast(err.message,'error'); }
+}
+
+async function doSearch(q) {
+  if (!q.trim()) { if (currentView==='all') showView('all'); return; }
+  const results = await api(`/api/entries?search=${encodeURIComponent(q)}`);
+  document.getElementById('topbarTitle').textContent = `Search: "${q}"`;
+  entries = results;
+  renderTable(results, `Search results for "${q}"`);
+}
+
+function exportMachine(id) {
+  toast('Preparing export...','warning');
+  const a = document.createElement('a');
+  a.href = `/api/export/machine/${id}`;
+  a.click();
+  setTimeout(() => toast('File downloaded! Move to Desktop manually if needed.'), 800);
+}
+
+function exportAll() {
+  toast('Preparing master export...','warning');
+  const a = document.createElement('a');
+  a.href = '/api/export/all';
+  a.click();
+  setTimeout(() => toast('Master Excel exported successfully!'), 800);
+}
+
+// Init
+(async () => {
+  await loadMachines();
+  renderDashboard();
+})();
+</script>
+</body>
+</html>
