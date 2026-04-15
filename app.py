@@ -6,7 +6,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 app = Flask(__name__)
-DB_PATH = os.path.join(os.path.dirname(__file__), 'instance', 'machine_data.db')
+DB_PATH = os.path.join(os.getcwd(), 'machine_data.db')
 
 def get_desktop_path():
     home = os.path.expanduser("~")
